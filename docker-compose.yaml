@@ -1,0 +1,18 @@
+version: '3.7'
+services:
+
+  s3:
+    image: zenko/cloudserver
+    container_name: tensor-trigger-s3
+    ports:
+    - "8080:8000"
+    networks:
+    - tensor-trigger
+    environment:
+      S3BACKEND: mem
+
+networks:
+  core:
+    name: core
+  tensor-trigger:
+    name: tensor-trigger
