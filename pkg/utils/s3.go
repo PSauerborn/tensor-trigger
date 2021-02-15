@@ -28,7 +28,6 @@ var (
 // is already owned, creation of the bucket is skipped
 func CreateS3Buckets(buckets []string, config *aws.Config) error {
     log.Info(fmt.Sprintf("creating initial buckets %+v", buckets))
-
     // create new service connection using configuration
     svc := s3.New(session.New(config))
     for _, bucket := range(buckets) {
@@ -137,14 +136,15 @@ func NewS3Uploader(config *aws.Config) *S3Uploader {
 
 // function to upload a file to a configured S3 server
 // with a given bucket name and key
-func(uploader *S3Uploader) UploadFile(bucket, key string, data []byte) error {
+func(uploader *S3Uploader) UploadFile(bucket, key string, data []byte, overwrite bool) error {
     log.Info(fmt.Sprintf("uploading s3 file to %s:%s", bucket, key))
-
+    // check if key already exists in S3 bucket
     exists, err := KeyExistsInBucket(bucket, key, uploader.Config)
     if err != nil {
         log.Error(fmt.Errorf("unable to check current keys in bucket: %+v", err))
         return err
-    } else if exists {
+    // only overwrite existing key if specified explicitely
+    } else if exists && !overwrite {
         log.Error(fmt.Errorf("unable to upload file: key %s already exists", key))
         return ErrKeyAlreadyExists
     }
@@ -192,7 +192,6 @@ func NewS3Downloader(config *aws.Config) *S3Downloader {
 // given a particular bucket name and key
 func(downloader *S3Downloader) DownloadFileToDisk(bucket, key, fileName string) (*os.File, error) {
     log.Info(fmt.Sprintf("downloading s3 file from %s:%s", bucket, key))
-
     // open new file for destination path
     f, err := os.Open(fileName)
     if err != nil {

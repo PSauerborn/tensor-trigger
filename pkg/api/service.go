@@ -24,11 +24,12 @@ func New(s3Config *aws.Config) *gin.Engine {
     router.GET("/tensor-trigger/health", healthCheckHandler)
     // create routes with upload and download middleware
     router.GET("/tensor-trigger/models", utils.S3DownloadMiddelware(s3Config), getModelsMetadataHandler)
-    router.GET("/tensor-trigger/model/:modelId", utils.S3DownloadMiddelware(s3Config), downloadModelHandler)
+    router.GET("/tensor-trigger/file/:modelId/:fileId", utils.S3DownloadMiddelware(s3Config), downloadModelHandler)
     // create routes to handle model uploading and triggering
     router.POST("/tensor-trigger/model", utils.S3UploadMiddelware(s3Config), createModelHandler)
-    router.PUT("/tensor-trigger/model/:modelId", utils.S3UploadMiddelware(s3Config), uploadModelHandler)
-    router.PUT("/tensor-trigger/models/trigger/:modelId", triggerModelHandler)
+    router.PUT("/tensor-trigger/file/:modelId", utils.S3UploadMiddelware(s3Config),
+        utils.S3DownloadMiddelware(s3Config), uploadModelHandler)
+    router.PUT("/tensor-trigger/models/trigger/:modelId/:fileId", triggerModelHandler)
     return router
 }
 
@@ -40,12 +41,16 @@ func healthCheckHandler(ctx *gin.Context) {
 }
 
 type ModelMetadata struct {
-    ModelName        string    `json:"model_name" binding:"required"`
-    ModelDescription string    `json:"model_description"`
-    ModelId          uuid.UUID `json:"model_id"`
-    Created          time.Time `json:"created"`
+    ModelName        string      `json:"model_name" binding:"required"`
+    ModelDescription string      `json:"model_description"`
+    ModelId          uuid.UUID   `json:"model_id"`
+    Created          time.Time   `json:"created"`
+    Files            []uuid.UUID `json:"files"`
 }
 
+// API handler to create a new models. models are created
+// as JSON objects, and tensor flow files can then be uploaded
+// against a given model
 func createModelHandler(ctx *gin.Context) {
     log.Info("received request to generate new model")
     var request struct {
@@ -67,11 +72,12 @@ func createModelHandler(ctx *gin.Context) {
         ModelDescription: request.ModelDescription,
         ModelId: modelId,
         Created: time.Now(),
+        Files: []uuid.UUID{},
     })
 
     // upload metadata to S3 bucket
     key := fmt.Sprintf("metadata/%s", modelId.String())
-    if err := uploader.UploadFile("tensor-trigger", key, modelJson); err != nil {
+    if err := uploader.UploadFile("tensor-trigger", key, modelJson, false); err != nil {
         log.Error(fmt.Errorf("unable to upload metadata to S3 storage: %+v", err))
         ctx.JSON(http.StatusInternalServerError,
             gin.H{"http_code": http.StatusInternalServerError, "message": "Internal server error"})
@@ -102,18 +108,44 @@ func uploadModelHandler(ctx *gin.Context) {
         return
     }
 
-    // get S3 uploader from context and upload file to S3 server
+    // get s3 downloader from request context and retrieve model metadata
+    downloader, _ := ctx.MustGet("s3_downloader").(*utils.S3Downloader)
+    meta, err := getModelMetadata(modelId, downloader)
+    if err != nil {
+        switch err {
+        case utils.ErrKeyDoesNotExist:
+            log.Error(fmt.Errorf("unable to download model for key %s: %+v", modelId, err))
+            ctx.JSON(http.StatusBadRequest,
+                gin.H{"http_code": http.StatusBadRequest, "message": "Cannot find model with given model ID"})
+        default:
+            log.Error(fmt.Errorf("unable to download model for key %s: %+v", modelId, err))
+            ctx.JSON(http.StatusInternalServerError,
+                gin.H{"http_code": http.StatusInternalServerError, "message": "Internal server error"})
+        }
+        return
+    }
+
+    fileId := uuid.New()
+    // get S3 uploader from context and upload file to S3 server using
+    // combination of model ID and File ID
     uploader, _ := ctx.MustGet("s3_uploader").(*utils.S3Uploader)
-    key := fmt.Sprintf("models/%s", modelId.String())
-    if err := uploader.UploadFile("tensor-trigger", key, body); err != nil {
+    key := fmt.Sprintf("models/%s/%s", modelId, fileId)
+    if err := uploader.UploadFile("tensor-trigger", key, body, false); err != nil {
         log.Error(fmt.Errorf("unable to upload file to S3 server: %+v", err))
         ctx.JSON(http.StatusInternalServerError,
             gin.H{"http_code": http.StatusInternalServerError, "message": "Internal server error"})
         return
     }
 
+    // add generated file ID to metadata and update metadata in S3 bucket
+    if err := addFileToMetadata(fileId, meta, uploader); err != nil {
+        log.Error(fmt.Errorf("unable to update model metadata: %+v", err))
+        ctx.JSON(http.StatusInternalServerError,
+            gin.H{"http_code": http.StatusInternalServerError, "message": "Internal server error"})
+        return
+    }
     ctx.JSON(http.StatusOK,
-        gin.H{"http_code": http.StatusOK, "message": "Successfully uploaded file"})
+        gin.H{"http_code": http.StatusOK, "message": "Successfully uploaded file", "file_id": fileId})
 }
 
 // function to retrieve list of models
@@ -121,23 +153,13 @@ func getModelsMetadataHandler(ctx *gin.Context) {
     log.Info("received request to retrieve tensorflow models")
 
     downloader, _ := ctx.MustGet("s3_downloader").(*utils.S3Downloader)
-    files, err := downloader.GetAllObjectsInBucketAsync("tensor-trigger")
+    // retrive all metadata files from s3 storage
+    models, err := getAllMetadataFiles(downloader)
     if err != nil {
         log.Error(fmt.Errorf("unable to retrieve metadata files: %+v", err))
         ctx.JSON(http.StatusInternalServerError,
             gin.H{"http_code": http.StatusInternalServerError, "message": "Internal server error"})
         return
-    }
-
-    models := []ModelMetadata{}
-    for _, file := range(files) {
-        var model ModelMetadata
-        if err := json.Unmarshal(file, &model); err != nil {
-            log.Warn(fmt.Errorf("found invalid JSON model in S3 bucket: %+v", err))
-            continue
-        } else {
-            models = append(models, model)
-        }
     }
     ctx.JSON(http.StatusOK,
         gin.H{"http_code": http.StatusOK, "data": models})
@@ -155,9 +177,18 @@ func downloadModelHandler(ctx *gin.Context) {
         return
     }
 
+    // extract file ID from path parameters and convert to UUID
+    fileId, err := uuid.Parse(ctx.Param("fileId"))
+    if err != nil {
+        log.Error(fmt.Errorf("unable to parse model ID %s", ctx.Param("fileId")))
+        ctx.JSON(http.StatusBadRequest,
+            gin.H{"http_code": http.StatusBadRequest, "message": "Invalid file ID"})
+        return
+    }
+
     // get download from request context and download file to bytes array
     downloader, _ := ctx.MustGet("s3_downloader").(*utils.S3Downloader)
-    key := fmt.Sprintf("models/%s", modelId.String())
+    key := fmt.Sprintf("models/%s/%s", modelId, fileId)
     data, err := downloader.DownloadFileToBytes("tensor-trigger", key)
     if err != nil {
         switch err {
