@@ -51,6 +51,7 @@ def get_cursor(credentials: PostgresCredentials, cursor_factory: CursorFactory =
         finally:
             cursor.close()
 
+
 @contextmanager
 def get_connection(credentials: PostgresCredentials):
     connection = psycopg2.connect(
@@ -84,6 +85,7 @@ def get_user_models(creds: PostgresCredentials, uid: str) -> List[NamedTuple]:
                    'WHERE username=%s', (uid,))
         results = db.fetchall()
     return list(results) if results else []
+
 
 def get_user_model(creds: PostgresCredentials, uid: str, model_id: UUID) -> Union[NamedTuple, None]:
     """DB function used to retrieve user models
@@ -123,10 +125,72 @@ def insert_user_model(creds: PostgresCredentials,
         UUID: [description]
     """
 
+    def format_schema_item(row: dict) -> dict:
+        row.var_type = row.var_type.upper()
+        return row.dict()
+
     model_id = uuid4()
     # cast all data types to upper case
-    schema = {k: v.upper() for k, v in schema.items()}
+    schema = {k: format_schema_item(v) for k, v in schema.items()}
     with get_cursor(creds) as db:
         db.execute('INSERT INTO models(model_id,username,model_name,model_description,model_schema,size) '
                    'VALUES(%s,%s,%s,%s,%s,%s)', (model_id, uid, name, description, json.dumps(schema), size))
     return model_id
+
+
+def insert_async_job(creds: PostgresCredentials, model_id: UUID, upload_size: int) -> UUID:
+    """DB function used to insert new async
+    job into database
+
+    Args:
+        creds (PostgresCredentials): [description]
+        model_id (UUID): [description]
+        upload_size (int): [description]
+
+    Returns:
+        UUID: [description]
+    """
+
+    job_id = uuid4()
+    with get_cursor(creds) as db:
+        db.execute('INSERT INTO async_jobs(job_id,model_id,upload_size) VALUES(%s,%s,%s)',
+                   (job_id, model_id, upload_size))
+    return job_id
+
+
+def get_user_jobs(creds: PostgresCredentials, uid: str) -> List[NamedTuple]:
+    """DB function used to retrieve all jobs for a given user
+
+    Args:
+        creds (PostgresCredentials): [description]
+
+    Returns:
+        List[NamedTuple]: [description]
+    """
+
+    with get_cursor(creds) as db:
+        db.execute('SELECT j.job_id,j.model_id,j.upload_size,j.created,j.last_updated,j.job_state '
+                   'FROM async_jobs AS j '
+                   'INNER JOIN models ON models.model_id = j.model_id '
+                   'WHERE models.username = %s', (uid,))
+        results = db.fetchall()
+    return results if results else []
+
+
+def get_user_job(creds: PostgresCredentials, uid: str, job_id: UUID) -> List[NamedTuple]:
+    """DB function used to retrieve all jobs for a given user
+
+    Args:
+        creds (PostgresCredentials): [description]
+
+    Returns:
+        List[NamedTuple]: [description]
+    """
+
+    with get_cursor(creds) as db:
+        db.execute('SELECT j.job_id,j.model_id,j.upload_size,j.created,j.last_updated,j.job_state '
+                   'FROM async_jobs AS j '
+                   'INNER JOIN models ON models.model_id = j.model_id '
+                   'WHERE models.username = %s AND j.job_id = %s', (uid, job_id))
+        result = db.fetchone()
+    return result if result else None

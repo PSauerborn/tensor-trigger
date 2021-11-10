@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.utils import json_response_with_message
-from src.routers import models, tensor
+from src.routers import models, tensor, jobs
 
 LOGGER = logging.getLogger(__name__)
 APP = FastAPI(title='Tensor Trigger API', version='0.1.0')
@@ -32,4 +32,5 @@ async def health_handler() -> JSONResponse:
     return json_response_with_message(status.HTTP_200_OK, 'Service running')
 
 APP.include_router(models.ROUTER, prefix='/models')
+APP.include_router(jobs.ROUTER, prefix='/jobs')
 APP.include_router(tensor.ROUTER, prefix='/tensor')

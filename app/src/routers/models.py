@@ -1,9 +1,7 @@
 """Module containing API router for tensor
 trigger functionality"""
 
-import json
 import logging
-import io
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status

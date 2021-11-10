@@ -6,10 +6,16 @@ from uuid import UUID
 from pydantic import BaseModel
 
 
+class AsyncBatchProcessRequest(BaseModel):
+
+    model_id: UUID
+    input_data: str
+
+
 class BatchProcessRequest(BaseModel):
 
     model_id: UUID
-    input_vector: List[Dict[str, Union[int, float]]]
+    input_vectors: List[Dict[str, Union[int, float]]]
 
 
 class ProcessRequest(BaseModel):
