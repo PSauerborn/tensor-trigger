@@ -94,7 +94,7 @@ async def new_model_handler(r: ModelUploadRequest, uid: str = Depends(get_user()
     try:
         meta, bytes_data = parse_base64_file(r.model_content)
         # try to parse uploaded content to tensorflow model
-        validate_upload_content(bytes_data)
+        validate_upload_content(bytes_data, r.model_schema)
         bytes_data.seek(0)
     except Exception:
         LOGGER.exception('unable to parse file')

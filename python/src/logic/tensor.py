@@ -63,7 +63,25 @@ def validate_data_point(data: Dict[str, Any], schema: Dict[str, str]) -> bool:
             return False
     return True
 
-def validate_upload_content(content: io.BytesIO):
+def _get_expected_input_shape(model) -> int:
+    """Function used to extract the expected
+    input shape from a tensorflow model
+
+    Args:
+        model ([type]): [description]
+
+    Returns:
+        int: [description]
+    """
+
+    try:
+        layers = model.get_config()['layers']
+        input_layer_config = layers[0]['config']
+        return input_layer_config['batch_input_shape'][1]
+    except (KeyError, IndexError):
+        pass
+
+def validate_upload_content(content: io.BytesIO, schema: Dict[str, str]):
     """Function used to validate uploaded
     file contents can be parsed to tensorflow model
 
@@ -73,7 +91,16 @@ def validate_upload_content(content: io.BytesIO):
 
     try:
         with h5py.File(content, 'r') as h5file:
-            load_model(h5file)
+            model = load_model(h5file)
+        # determine expected input length from model and
+        # raise exception is schema does not fit expected
+        # length
+        expected_input_shape = _get_expected_input_shape(model)
+        if expected_input_shape != len(schema.keys()):
+            LOGGER.error('unable to validate inputs: expected length does not match schema: expected %s got %s',
+                         expected_input_shape, len(schema.keys()))
+            raise ValueError
+
     except Exception:
         LOGGER.exception('unable to validate input model')
         raise
