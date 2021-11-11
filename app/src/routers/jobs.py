@@ -2,6 +2,7 @@
 trigger functionality"""
 
 import logging
+import json
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
@@ -33,6 +34,7 @@ async def get_models_handler(uid: str = Depends(get_user())) -> JSONResponse:
     content = {'http_code': status.HTTP_200_OK, 'jobs': jobs}
     return JSONResponse(status_code=status.HTTP_200_OK, content=je(content))
 
+
 @ROUTER.get('/{job_id}/metadata')
 async def get_model_meta_handler(job_id: UUID, uid: str = Depends(get_user())) -> JSONResponse:
     """API handler used to retrieve models
@@ -51,6 +53,7 @@ async def get_model_meta_handler(job_id: UUID, uid: str = Depends(get_user())) -
 
     content = {'http_code': status.HTTP_200_OK, 'job': job._asdict()}
     return JSONResponse(status_code=status.HTTP_200_OK, content=je(content))
+
 
 @ROUTER.get('/{job_id}/content')
 async def get_model_content_handler(job_id: UUID, uid: str = Depends(get_user())) -> JSONResponse:
@@ -74,4 +77,34 @@ async def get_model_content_handler(job_id: UUID, uid: str = Depends(get_user())
     meta = Base64FileMetadata(file_size=0, mime_type='text/plain')
     content = {'http_code': status.HTTP_200_OK,
                'job': generate_base64_file(s3_data, meta)}
+    return JSONResponse(status_code=status.HTTP_200_OK, content=je(content))
+
+
+@ROUTER.get('/{job_id}/results')
+async def get_job_results_handler(job_id: UUID, uid: str = Depends(get_user())) -> JSONResponse:
+    """API handler used to retrieve models
+    for a given user
+
+    Returns:
+        JSONResponse: [description]
+    """
+
+    LOGGER.debug('retrieving models for user %s', uid)
+    # get all models from postgres database and convert to dict
+    job = get_user_job(PG_CREDENTIALS, uid, job_id)
+    if job is None:
+        LOGGER.error('unable to find job %s for user %s', job_id, uid)
+        return json_response_with_message(status.HTTP_404_NOT_FOUND, 'Cannot find specified job')
+
+    if job.job_state != 2:
+        LOGGER.error('unable to retrieve job results for %s: invalid job state %s', job_id, job.job_state)
+        return json_response_with_message(status.HTTP_400_BAD_REQUEST, 'Invalid job state')
+
+    s3_data = retrieve_s3_file('/tensor-trigger/output-data' + str(job.job_id))
+    results = json.loads(s3_data.getvalue().decode())
+    # generate metadata for file (including mime type) and convert to
+    # base64 encoded format
+    meta = Base64FileMetadata(file_size=0, mime_type='text/plain')
+    content = {'http_code': status.HTTP_200_OK,
+               'results': results}
     return JSONResponse(status_code=status.HTTP_200_OK, content=je(content))

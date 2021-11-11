@@ -68,3 +68,14 @@ def get_connection(credentials: PostgresCredentials):
     finally:
         connection.close()
 
+
+def update_job_state(creds: PostgresCredentials, job_id: UUID, state: int):
+    """Function used to update job state
+
+    Args:
+        job_id (UUID): [description]
+        state (int): [description]
+    """
+
+    with get_cursor(creds) as db:
+        db.execute('UPDATE async_jobs SET job_state = %s WHERE job_id = %s', (state, job_id))

@@ -2,6 +2,7 @@
 trigger functionality"""
 
 import logging
+import json
 
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
@@ -10,11 +11,13 @@ from fastapi.encoders import jsonable_encoder as je
 from src.utils import get_user,json_response_with_message, parse_base64_file
 from src.persistence.postgres import get_user_model, insert_async_job
 from src.persistence.s3 import retrieve_s3_file, upload_s3_file
-from src.config import PG_CREDENTIALS
+from src.config import PG_CREDENTIALS, MESSAGE_BROKER_URL, JOB_EXCHANGE_NAME, \
+    JOB_EXCHANGE_TYPE, JOB_ROUTING_KEY
 from src.logic.tensor import validate_data_point, run_model, \
     run_model_batched, validate_csv_file
 from src.models.tensor import ProcessRequest, BatchProcessRequest, \
     AsyncBatchProcessRequest
+from src.services.rabbitmq import write_to_exchange
 
 
 LOGGER = logging.getLogger(__name__)
@@ -135,6 +138,14 @@ async def async_batch_model_handler(r: AsyncBatchProcessRequest, uid: str = Depe
     content = {'http_code': status.HTTP_201_CREATED,
                'message': 'Successfully queued job',
                'job_id': job_id}
+
+    # send event to RabbitMQ broker to trigger worker
+    event = {'job_id': str(job_id), 'model_id': str(r.model_id), 'user': uid}
+    write_to_exchange(MESSAGE_BROKER_URL,
+                      JOB_EXCHANGE_NAME,
+                      json.dumps(event),
+                      JOB_EXCHANGE_TYPE,
+                      JOB_ROUTING_KEY)
     return JSONResponse(status_code=status.HTTP_201_CREATED, content=je(content))
 
 

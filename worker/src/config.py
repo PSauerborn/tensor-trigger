@@ -47,7 +47,7 @@ LOG_LEVELS = {
 LOG_LEVEL = LOG_LEVELS.get(override_value('log_level', 'INFO'), logging.DEBUG)
 logging.basicConfig(level=LOG_LEVEL)
 
-for logger in ('boto3', 'botocore'):
+for logger in ('boto3', 'botocore', 'pika'):
     logging.getLogger(logger).setLevel(logging.WARNING)
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
 
@@ -65,3 +65,16 @@ PG_CREDENTIALS = PostgresCredentials(**{
     'PG_USER': POSTGRES_USER,
     'PG_PASSWORD': POSTGRES_PASSWORD
 })
+
+MESSAGE_BROKER_URL = override_value('MESSAGE_BROKER_URL', '', secret=True)
+
+EXCHANGE_NAME = override_value('EXCHANGE_NAME', 'exch_tensor_trigger')
+EXCHANGE_TYPE = override_value('EXCHANGE_TYPE', 'direct')
+ROUTING_KEY = override_value('ROUTING_KEY', 'tensor-trigger_async_jobs')
+
+TENSOR_TRIGGER_API_URL = override_value('TENSOR_TRIGGER_API_URL', 'http://localhost:10988')
+
+S3_REGION_NAME = override_value('S3_REGION_NAME', 'eu-west-1')
+S3_BUCKET_NAME = override_value('S3_BUCKET_NAME', 's3-tensor-trigger')
+S3_ACCESS_KEY_ID = override_value('S3_ACCESS_KEY_ID', '')
+S3_SECRET_ACCESS_KEY = override_value('S3_SECRET_ACCESS_KEY', '', secret=True)

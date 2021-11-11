@@ -22,3 +22,5 @@ test*.py
 test*.txt
 
 tests
+
+env.list

@@ -47,7 +47,7 @@ LOG_LEVELS = {
 LOG_LEVEL = LOG_LEVELS.get(override_value('log_level', 'INFO'), logging.DEBUG)
 logging.basicConfig(level=LOG_LEVEL)
 
-for logger in ('boto3', 'botocore'):
+for logger in ('boto3', 'botocore', 'pika'):
     logging.getLogger(logger).setLevel(logging.WARNING)
 logging.getLogger('tensorflow').setLevel(logging.ERROR)
 
@@ -56,7 +56,6 @@ LISTEN_PORT = override_value('LISTEN_PORT', 10988)
 
 S3_REGION_NAME = override_value('S3_REGION_NAME', 'eu-west-1')
 S3_BUCKET_NAME = override_value('S3_BUCKET_NAME', 's3-tensor-trigger')
-S3_ENDPOINT_URL = override_value('S3_ENDPOINT_URL', 'http://localhost:8080')
 S3_ACCESS_KEY_ID = override_value('S3_ACCESS_KEY_ID', '')
 S3_SECRET_ACCESS_KEY = override_value('S3_SECRET_ACCESS_KEY', '', secret=True)
 
