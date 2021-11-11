@@ -1,18 +1,33 @@
 version: '3.7'
 services:
-
-  s3:
-    image: zenko/cloudserver
-    container_name: tensor-trigger-s3
+  api:
+    build:
+      context: app
+    container_name: tensor-trigger-api
     ports:
-    - "8080:8000"
+    - "10988:10988"
     networks:
     - tensor-trigger
-    environment:
-      S3BACKEND: mem
+    - postgres
+    - rabbit
+    env_file:
+      - app/env.list
+
+  worker:
+    build:
+      context: worker
+    container_name: tensor-trigger-worker
+    networks:
+    - tensor-trigger
+    - postgres
+    - rabbit
+    env_file:
+      - worker/env.list
 
 networks:
-  core:
-    name: core
+  postgres:
+    name: postgres
   tensor-trigger:
     name: tensor-trigger
+  rabbit:
+    name: rabbit
