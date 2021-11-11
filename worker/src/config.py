@@ -44,7 +44,7 @@ LOG_LEVELS = {
     'CRITICAL': logging.CRITICAL
 }
 
-LOG_LEVEL = LOG_LEVELS.get(override_value('log_level', 'INFO'), logging.DEBUG)
+LOG_LEVEL = LOG_LEVELS.get(override_value('log_level', 'INFO'), logging.INFO)
 logging.basicConfig(level=LOG_LEVEL)
 
 for logger in ('boto3', 'botocore', 'pika'):

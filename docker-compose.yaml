@@ -22,7 +22,7 @@ services:
     - postgres
     - rabbit
     env_file:
-      - app/env.list
+      - worker/env.list
 
 networks:
   postgres:

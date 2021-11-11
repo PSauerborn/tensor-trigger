@@ -11,11 +11,12 @@ import pandas as pd
 from tensorflow.keras.models import load_model
 
 from src.services import tensor
-from src.logic.utils import parse_base64_file
+from src.logic.utils import parse_base64_file, timer
 
 LOGGER = logging.getLogger(__name__)
 
 
+@timer
 def get_tensorflow_model(model_id: UUID, user: str) -> Union[io.BytesIO, None]:
     """Function used to retrieve and parse
     tensorflow model from Tensor Trigger API
@@ -45,6 +46,7 @@ def get_tensorflow_model(model_id: UUID, user: str) -> Union[io.BytesIO, None]:
         LOGGER.exception('unable to load tensor flow model')
 
 
+@timer
 def get_job_csv_data(job_id: UUID, user: str) -> Union[np.ndarray, None]:
     """Function used to retrieve CSV input
     data used to run model(s)
@@ -73,6 +75,7 @@ def get_job_csv_data(job_id: UUID, user: str) -> Union[np.ndarray, None]:
         LOGGER.exception('unable to load tensor flow model')
 
 
+@timer
 def run_tensorflow_model(model_id: UUID, job_id: UUID, user: str):
     """Function used to run tensorflow models
 

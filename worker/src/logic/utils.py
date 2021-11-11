@@ -4,10 +4,27 @@ import logging
 import io
 import base64
 import re
+import time
+from functools import wraps
 from collections import namedtuple
 
 LOGGER = logging.getLogger(__name__)
 DATA_REGEX = r'^data:(.*);base64,(.*)'
+
+
+def timer(func):
+    """Decorator used to log execution time of
+    a particular function"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start_ts = time.time()
+        results = func(*args, **kwargs)
+        # get execution time of function and log before
+        # returning output
+        exec_time = round(time.time() - start_ts, 2)
+        LOGGER.info('%s - exec in %s seconds', func.__name__, exec_time)
+        return results
+    return wrapper
 
 
 class InvalidBase64FileException(Exception):
