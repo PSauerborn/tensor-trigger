@@ -6,7 +6,7 @@ CREATE TABLE models(
     model_schema JSON NOT NULL,
     size INT NOT NULL,
     created TIMESTAMP NOT NULL DEFAULT (now() AT TIME ZONE 'UTC')
-)
+);
 
 CREATE TABLE async_jobs(
     job_id UUID PRIMARY KEY NOT NULL,
@@ -15,4 +15,4 @@ CREATE TABLE async_jobs(
     upload_size INTEGER NOT NULL,
     created TIMESTAMP NOT NULL DEFAULT (now() AT TIME ZONE 'UTC'),
     last_updated TIMESTAMP
-)
+);

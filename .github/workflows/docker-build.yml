@@ -22,12 +22,12 @@ jobs:
         run: |
           docker login docker.alpinesoftware.net --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
           
-      - name: Build and push
+      - name: Build and push API
         run: |
           docker build -t docker.alpinesoftware.net/tensor-trigger/app:latest app
           docker push docker.alpinesoftware.net/tensor-trigger/app:latest
 
-      - name: Build and push
+      - name: Build and push Worker
         run: |
           docker build -t docker.alpinesoftware.net/tensor-trigger/worker:latest worker
           docker push docker.alpinesoftware.net/tensor-trigger/worker:latest
