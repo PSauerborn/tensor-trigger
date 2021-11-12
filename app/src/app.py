@@ -31,6 +31,6 @@ async def health_handler() -> JSONResponse:
     LOGGER.debug('received request for health check endpoint')
     return json_response_with_message(status.HTTP_200_OK, 'Service running')
 
-APP.include_router(models.ROUTER, prefix='/tensor-trigger/models')
-APP.include_router(jobs.ROUTER, prefix='/tensor-trigger/jobs')
-APP.include_router(tensor.ROUTER, prefix='/tensor-trigger/tensor')
+APP.include_router(models.ROUTER, prefix='/models')
+APP.include_router(jobs.ROUTER, prefix='/jobs')
+APP.include_router(tensor.ROUTER, prefix='/tensor')

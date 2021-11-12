@@ -24,7 +24,7 @@ def get_job_input_data(job_id: UUID, user: str) -> str:
         str: [description]
     """
 
-    url = TENSOR_TRIGGER_API_URL + '/tensor-trigger/jobs/{}/content'.format(job_id)
+    url = TENSOR_TRIGGER_API_URL + '/jobs/{}/content'.format(job_id)
     try:
         r = requests.get(url, headers={'X-Authenticated-Userid': user})
         LOGGER.debug('received response %s from API', r.text)
@@ -48,7 +48,7 @@ def get_model(model_id: UUID, user: str) -> str:
         str: [description]
     """
 
-    url = TENSOR_TRIGGER_API_URL + '/tensor-trigger/models/{}/content'.format(model_id)
+    url = TENSOR_TRIGGER_API_URL + '/models/{}/content'.format(model_id)
     try:
         r = requests.get(url, headers={'X-Authenticated-Userid': user})
         LOGGER.debug('received response %s from API', r.text)
