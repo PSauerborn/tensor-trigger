@@ -184,7 +184,7 @@ spec:
           - name: "S3_BUCKET_NAME"
             value: {{ .Values.worker.container_env.s3_bucket_name }}
           - name: "TENSOR_TRIGGER_API_URL"
-            value: {{ .Values.worker.tensor_trigger_api_url }}
+            value: {{ .Values.worker.container_env.tensor_trigger_api_url }}
           resources:
             {{- toYaml .Values.worker.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

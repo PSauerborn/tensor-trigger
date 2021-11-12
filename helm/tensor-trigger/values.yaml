@@ -99,7 +99,7 @@ worker:
     routing_key: tensor-trigger_async_jobs 
     s3_region_name: eu-west-1
     s3_bucket_name: s3-tensor-trigger
-    tensor_trigger_api_url: http://asn-tensor-trigger-api.apps
+    tensor_trigger_api_url: http://asn-tensor-trigger.apps
 
   imagePullSecrets: []
   nameOverride: ""
