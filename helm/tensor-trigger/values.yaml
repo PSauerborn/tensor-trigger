@@ -20,7 +20,7 @@ secrets:
 globals:
   postgres_host: asn-db-postgresql.core
   postgres_port: 5432
-  postgres_username: asn_tensor_trigger
+  postgres_user: asn_tensor_trigger
   postgres_db: asn_tensor_trigger 
 
 api:

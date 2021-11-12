@@ -65,8 +65,8 @@ spec:
             value: "{{ .Values.globals.postgres_port }}"
           - name: "POSTGRES_DB"
             value: {{ .Values.globals.postgres_db }}
-          - name: "POSTGRES_USERNAME"
-            value: {{ .Values.globals.postgres_username }}
+          - name: "POSTGRES_USER"
+            value: {{ .Values.globals.postgres_user }}
           - name: "JOB_EXCHANGE_NAME"
             value: {{ .Values.api.container_env.job_exchange_name }}
           - name: "JOB_EXCHANGE_TYPE"
@@ -171,8 +171,8 @@ spec:
             value: "{{ .Values.globals.postgres_port }}"
           - name: "POSTGRES_DB"
             value: {{ .Values.globals.postgres_db }}
-          - name: "POSTGRES_USERNAME"
-            value: {{ .Values.globals.postgres_username }}
+          - name: "POSTGRES_USER"
+            value: {{ .Values.globals.postgres_user }}
           - name: "EXCHANGE_NAME"
             value: {{ .Values.worker.container_env.exchange_name }}
           - name: "EXCHANGE_TYPE"
