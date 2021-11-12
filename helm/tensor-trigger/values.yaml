@@ -1,0 +1,143 @@
+# Default values for asn-tensor-trigger.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+serviceAccount:
+    # Specifies whether a service account should be created
+    create: false
+    # Annotations to add to the service account
+    annotations: {}
+    # The name of the service account to use.
+    # If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+secrets:
+  postgres_password: dummy
+  message_broker_url: dummy 
+  aws_access_key_id: dummy 
+  aws_secret_access_key: dummy
+
+globals:
+  postgres_host: asn-db-postgresql.core
+  postgres_port: 5432
+  postgres_user: asn_tensor_trigger
+  postgres_db: asn_tensor_trigger 
+
+api:
+  image:
+    repository: docker.alpinesoftware.net/tensor-trigger/app
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: latest
+
+  container_env:
+    log_level: INFO
+    job_exchange_name: exch_tensor_trigger
+    job_exchange_type: direct 
+    job_routing_key: tensor-trigger_async_jobs 
+    s3_region_name: eu-west-1
+    s3_bucket_name: s3-tensor-trigger
+     
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+
+  podAnnotations: {}
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 10988
+
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts: []
+    tls: []
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+
+worker:
+  image:
+    repository: docker.alpinesoftware.net/tensor-trigger/worker
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: latest
+
+  container_env:
+    log_level: INFO 
+    exchange_name: exch_tensor_trigger
+    exchange_type: direct 
+    routing_key: tensor-trigger_async_jobs 
+    s3_region_name: eu-west-1
+    s3_bucket_name: s3-tensor-trigger
+    tensor_trigger_api_url: http://asn-tensor-trigger.apps
+
+  imagePullSecrets: []
+  nameOverride: ""
+  fullnameOverride: ""
+
+  podAnnotations: {}
+
+  podSecurityContext: {}
+    # fsGroup: 2000
+
+  securityContext: {}
+    # capabilities:
+    #   drop:
+    #   - ALL
+    # readOnlyRootFilesystem: true
+    # runAsNonRoot: true
+    # runAsUser: 1000
+
+  resources: {}
+    # We usually recommend not to specify default resources and to leave this as a conscious
+    # choice for the user. This also increases chances charts run on environments with little
+    # resources, such as Minikube. If you do want to specify resources, uncomment the following
+    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
+
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

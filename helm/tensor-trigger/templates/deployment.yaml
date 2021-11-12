@@ -1,0 +1,201 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "tensor-trigger.fullname" . }}-api
+  labels:
+    {{- include "tensor-trigger.labels" . | nindent 4 }}
+    app: {{ include "tensor-trigger.name" . }}-api
+spec:
+  {{- if not .Values.api.autoscaling.enabled }}
+  replicas: {{ .Values.api.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "tensor-trigger.selectorLabels" . | nindent 6 }}
+      app: {{ include "tensor-trigger.name" . }}-api
+  template:
+    metadata:
+      {{- with .Values.api.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "tensor-trigger.selectorLabels" . | nindent 8 }}
+        app: {{ include "tensor-trigger.name" . }}-api
+    spec:
+      {{- with .Values.api.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "tensor-trigger.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.api.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.api.securityContext | nindent 12 }}
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          env:
+          - name: "POSTGRES_PASSWORD"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "tensor-trigger.fullname" . }}-env
+                key: postgres_password
+          - name: "MESSAGE_BROKER_URL"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "tensor-trigger.fullname" . }}-env
+                key: message_broker_url
+          - name: "S3_ACCESS_KEY_ID"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "tensor-trigger.fullname" . }}-env
+                key: aws_access_key_id
+          - name: "S3_SECRET_ACCESS_KEY"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "tensor-trigger.fullname" . }}-env
+                key: aws_secret_access_key
+          - name: "LOG_LEVEL"
+            value: {{ .Values.api.container_env.log_level }}
+          - name: "POSTGRES_HOST"
+            value: {{ .Values.globals.postgres_host }}
+          - name: "POSTGRES_PORT"
+            value: "{{ .Values.globals.postgres_port }}"
+          - name: "POSTGRES_DB"
+            value: {{ .Values.globals.postgres_db }}
+          - name: "POSTGRES_USER"
+            value: {{ .Values.globals.postgres_user }}
+          - name: "JOB_EXCHANGE_NAME"
+            value: {{ .Values.api.container_env.job_exchange_name }}
+          - name: "JOB_EXCHANGE_TYPE"
+            value: {{ .Values.api.container_env.job_exchange_type }}
+          - name: "JOB_ROUTING_KEY"
+            value: {{ .Values.api.container_env.job_routing_key }}
+          - name: "S3_REGION_NAME"
+            value: {{ .Values.api.container_env.s3_region_name }}
+          - name: "S3_BUCKET_NAME"
+            value: {{ .Values.api.container_env.s3_bucket_name }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.api.service.targetPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health_check
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /health_check
+              port: http
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "tensor-trigger.fullname" . }}-worker
+  labels:
+    {{- include "tensor-trigger.labels" . | nindent 4 }}
+    app: {{ include "tensor-trigger.name" . }}-worker
+spec:
+  {{- if not .Values.worker.autoscaling.enabled }}
+  replicas: {{ .Values.worker.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "tensor-trigger.selectorLabels" . | nindent 6 }}
+      app: {{ include "tensor-trigger.name" . }}-worker
+  template:
+    metadata:
+      {{- with .Values.worker.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "tensor-trigger.selectorLabels" . | nindent 8 }}
+        app: {{ include "tensor-trigger.name" . }}-worker
+    spec:
+      {{- with .Values.worker.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "tensor-trigger.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.worker.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.worker.securityContext | nindent 12 }}
+          image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.worker.image.pullPolicy }}
+          env:
+          - name: "POSTGRES_PASSWORD"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "tensor-trigger.fullname" . }}-env
+                key: postgres_password
+          - name: "MESSAGE_BROKER_URL"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "tensor-trigger.fullname" . }}-env
+                key: message_broker_url
+          - name: "S3_ACCESS_KEY_ID"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "tensor-trigger.fullname" . }}-env
+                key: aws_access_key_id
+          - name: "S3_SECRET_ACCESS_KEY"
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "tensor-trigger.fullname" . }}-env
+                key: aws_secret_access_key
+          - name: "LOG_LEVEL"
+            value: {{ .Values.worker.container_env.log_level }}
+          - name: "POSTGRES_HOST"
+            value: {{ .Values.globals.postgres_host }}
+          - name: "POSTGRES_PORT"
+            value: "{{ .Values.globals.postgres_port }}"
+          - name: "POSTGRES_DB"
+            value: {{ .Values.globals.postgres_db }}
+          - name: "POSTGRES_USER"
+            value: {{ .Values.globals.postgres_user }}
+          - name: "EXCHANGE_NAME"
+            value: {{ .Values.worker.container_env.exchange_name }}
+          - name: "EXCHANGE_TYPE"
+            value: {{ .Values.worker.container_env.exchange_type }}
+          - name: "ROUTING_KEY"
+            value: {{ .Values.worker.container_env.routing_key }}
+          - name: "S3_REGION_NAME"
+            value: {{ .Values.worker.container_env.s3_region_name }}
+          - name: "S3_BUCKET_NAME"
+            value: {{ .Values.worker.container_env.s3_bucket_name }}
+          - name: "TENSOR_TRIGGER_API_URL"
+            value: {{ .Values.worker.container_env.tensor_trigger_api_url }}
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
