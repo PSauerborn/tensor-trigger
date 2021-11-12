@@ -31,3 +31,8 @@ jobs:
         run: |
           docker build -t docker.alpinesoftware.net/tensor-trigger/worker:latest worker
           docker push docker.alpinesoftware.net/tensor-trigger/worker:latest
+
+      - name: Build and push OpenAPI docs
+        run: |
+          docker build -t docker.alpinesoftware.net/tensor-trigger/docs:latest docs/openapi
+          docker push docker.alpinesoftware.net/tensor-trigger/docs:latest

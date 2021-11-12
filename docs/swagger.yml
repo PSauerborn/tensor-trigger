@@ -1,0 +1,607 @@
+openapi: 3.0.0
+info:
+  title: Tensor Trigger API
+  description: Micro-service providing model and event management interface
+  version: 0.1.0
+
+servers:
+- url: https://api.alpinesoftware.net/tensor-trigger/v1
+  description: Prototype version of application
+
+tags:
+  - name: Model Endpoints
+    description: Endpoints used to create, manage and run models
+
+  - name: Job Endpoints
+    description: Endpoints used to create, manage and run jobs
+
+  - name: Event Endpoints
+    description: Endpoints used to run event interface
+
+paths:
+  /health_check:
+    get:
+      summary: Route used to perform simple health check
+      responses:
+        200:
+          description: JSON response containing success message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheck'
+
+  /models:
+    get:
+      summary: Retrieve all models in JSON format
+      tags:
+      - Model Endpoints
+      responses:
+        200:
+          description: JSON response containing models in JSON format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsResponse'
+
+  /models/{model_id}/metadata:
+    get:
+      summary: Retrieve model metadata in JSON format for a given model ID
+      tags:
+      - Model Endpoints
+      parameters:
+      - in: path 
+        name: model_id 
+        required: true 
+        description: UUID of model 
+        schema:
+          type: string 
+          format: uuid        
+      responses:
+        200:
+          description: JSON response containing model in JSON format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelMetaResponse'
+        404:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+
+  /models/{model_id}/content:
+    get:
+      summary: Retrieve model HD5 file in base64 encoded format
+      tags:
+      - Model Endpoints
+      parameters:
+      - in: path 
+        name: model_id 
+        required: true 
+        description: UUID of model 
+        schema:
+          type: string 
+          format: uuid        
+      responses:
+        200:
+          description: JSON response containing base64 encoded HD5 model
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelContentResponse'
+        404:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+
+  /models/new:
+    post:
+      summary: Create new tensor trigger model
+      tags:
+      - Model Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewModelRequestBody'
+
+      responses:
+        200:
+          description: JSON response containing success message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelCreatedResponse'
+        400:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+          
+
+  /tensor/run:
+    post:
+      summary: Run model against a single input vector
+      tags:
+      - Event Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunModelRequestBody'
+
+      responses:
+        200:
+          description: JSON response results of model run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelRunResponse'
+        400:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        404:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+
+  /tensor/run/batch:
+    post:
+      summary: Run model against a batch of input vectors
+      tags:
+      - Event Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunModelBatchedRequestBody'
+
+      responses:
+        200:
+          description: JSON response containing results of model run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchedModelRunResponse'
+        400:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        404:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+
+  /tensor/run/asycn:
+    post:
+      summary: Run model async against uploaded CSV data batch
+      tags:
+      - Event Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunModelAsyncRequestBody'
+
+      responses:
+        200:
+          description: JSON response containing job ID and success message in JSON format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncModelRunResponse'
+        400:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        404:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+
+  /jobs:
+    get:
+      summary: Retrieve all jobs
+      tags:
+      - Job Endpoints
+      responses:
+        200:
+          description: JSON response containing jobs in JSON format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobsResponse'
+
+  /jobs/{job_id}/metadata:
+    get:
+      summary: Retrieve job metadata for a given job ID
+      tags:
+      - Job Endpoints
+      parameters:
+      - in: path 
+        name: job_id 
+        required: true 
+        description: UUID of job 
+        schema:
+          type: string 
+          format: uuid   
+      responses:
+        200:
+          description: JSON response containing job metadata in JSON format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobMetaResponse'
+        404:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+
+  /jobs/{job_id}/content:
+    get:
+      summary: Retrieve uploaded input data for a given job ID
+      tags:
+      - Job Endpoints
+      parameters:
+      - in: path 
+        name: job_id 
+        required: true 
+        description: UUID of job 
+        schema:
+          type: string 
+          format: uuid 
+      responses:
+        200:
+          description: JSON response containing base64 encoded CSV input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobContentResponse'
+        404:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+
+  /jobs/{job_id}/results:
+    get:
+      summary: Retrieve model outputs from job run
+      tags:
+      - Job Endpoints
+      parameters:
+      - in: path 
+        name: job_id 
+        required: true 
+        description: UUID of job 
+        schema:
+          type: string 
+          format: uuid 
+      responses:
+        200:
+          description: JSON response containing model ouputs in JSON format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobResultsResponse'
+        404:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+
+
+components:
+  schemas:
+    HealthCheck:
+      properties:
+        message:
+          type: string
+          example: Service running
+        http_code:
+          type: integer
+          example: 200
+
+    Unauthorized:
+      properties:
+        http_code:
+          type: integer
+          example: 401
+        message:
+          type: string
+          example: Unauthorized
+
+    NotFound:
+      properties:
+        http_code:
+          type: integer
+          example: 404
+        message:
+          type: string
+          example: Cannot find specified entity with provided ID
+
+    Forbidden:
+      properties:
+        http_code:
+          type: integer
+          example: 403
+        message:
+          type: string
+          example: Forbidden
+
+    BadRequest:
+      properties:
+        http_code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: Bad Request
+
+    Model:
+      properties:
+        model_id:
+          type: string 
+          format: uuid 
+          example: d7495cd8-37b9-4c8d-abb0-833cc05bca1a
+        model_name:
+          type: string
+          example: Example Iris Model
+        model_description:
+          type: string
+          example: example model used to classify iris flowers
+        model_schema:
+          type: object
+          example:
+            petal_length:
+              var_type: INT
+              index: 0
+            petal_width:
+              var_type: FLOAT
+              index: 0
+            sepal_length:
+              var_type: INT
+              index: 0
+            sepal_width:
+              var_type: FLOAT
+              index: 0
+        created:
+          type: string 
+          format: timestamp
+          example: '2021-01-01T00:00:00Z'
+    
+    NewModelRequestBody:
+      properties:
+        model_name:
+          type: string
+          example: Example Iris Model
+        model_description:
+          type: string
+          example: example model used to classify iris flowers
+        model_content:
+          type: string 
+          description: base64 encoded HD5 tensorflow file
+          example: data:application/octet-stream;base64,RXhhbXBsZSBIRDUgbW9kZWwgZmlsZQ==
+        model_schema:
+          type: object
+          example:
+            petal_length:
+              var_type: INT
+              index: 0
+            petal_width:
+              var_type: FLOAT
+              index: 0
+            sepal_length:
+              var_type: INT
+              index: 0
+            sepal_width:
+              var_type: FLOAT
+              index: 0
+
+    ModelCreatedResponse:
+      properties:
+        http_code:
+          type: integer 
+          example: 201 
+        message:
+          type: string 
+          example: Successfully created model 
+
+    ModelsResponse:
+      properties:
+        http_code:
+          type: integer 
+          example: 200 
+        models:
+          type: array
+          items: 
+            $ref: '#/components/schemas/Model'
+        
+    ModelMetaResponse:
+      properties:
+        http_code:
+          type: integer 
+          example: 200 
+        model:
+          type: object
+          $ref: '#/components/schemas/Model'
+
+    ModelContentResponse:
+      properties:
+        http_code:
+          type: integer 
+          example: 200 
+        model:
+          type: string 
+          example: data:application/octet-stream;base64,RXhhbXBsZSBIRDUgbW9kZWwgZmlsZQ==
+
+    RunModelRequestBody:
+      properties:
+        model_id:
+          type: string 
+          format: uuid 
+          example: d7495cd8-37b9-4c8d-abb0-833cc05bca1a
+        input_vector:
+          type: object 
+          example:
+            petal_length: 0.56
+            petal_width: 3.21
+            sepal_length: 1.26
+            sepal_width: 4.84
+
+    RunModelBatchedRequestBody:
+      properties:
+        model_id:
+          type: string 
+          format: uuid 
+          example: d7495cd8-37b9-4c8d-abb0-833cc05bca1a
+        input_vectors:
+          type: array 
+          items:
+            type: object 
+            example:
+              petal_length: 0.56
+              petal_width: 3.21
+              sepal_length: 1.26
+              sepal_width: 4.84
+
+    RunModelAsyncRequestBody:
+      properties:
+        model_id:
+          type: string 
+          format: uuid 
+          example: d7495cd8-37b9-4c8d-abb0-833cc05bca1a
+        input_data:
+          type: string 
+          description: base64 encoded CSV file 
+          example: data:text/plain;base64,RXhhbXBsZSBIRDUgbW9kZWwgZmlsZQ==
+
+    ModelRunResponse:
+      properties:
+        http_code:
+          type: integer 
+          example: 200
+        output:
+          type: array 
+          items:
+            type: number 
+          example: [0.98, 0.01, 0.01]
+
+    BatchedModelRunResponse:
+      properties:
+        http_code:
+          type: integer 
+          example: 200
+        output:
+          type: array 
+          items:
+            type: array 
+            items:
+              type: number
+          example: [[0.05, 0.05, 0.9], [0.98, 0.01, 0.01], [0.3, 0.5, 0.2]]
+
+    AsyncModelRunResponse:
+      properties:
+        http_code:
+          type: integer 
+          example: 201
+        message:
+          type: string 
+          example: 'Successfully queued job'
+        job_id:
+          type: string 
+          format: uuid 
+          example: 9692a3f7-3c86-4b01-b33d-f09359191de6
+
+    Job:
+      properties:
+        job_id: 
+          type: string 
+          format: uuid 
+          example: b6c60f67-aed9-4c29-909e-3d4a3fb08560
+        created:
+          type: string 
+          format: timestamp
+          example: '2021-01-01T00:00:00Z'
+        upload_size:
+          type: integer 
+          description: number of bytes uploaded for input data 
+          example: 556788
+        last_updated:
+          type: string 
+          format: timestamp
+          example: '2021-01-01T00:00:00Z'
+
+    JobMetaResponse:
+      properties:
+        http_code:
+          type: integer 
+          example: 200 
+        job:
+          type: object 
+          $ref: '#/components/schemas/Job'
+
+    JobsResponse:
+      properties:
+        http_code:
+          type: integer 
+          example: 200
+        jobs:
+          type: array 
+          items:
+            type: object 
+            $ref: '#/components/schemas/Job'
+
+    JobContentResponse:
+      properties:
+        http_code:
+          type: integer 
+          example: 200
+        job:
+          type: string 
+          description: base64 encoded CSV data 
+          example: data:text/plain;base64,RXhhbXBsZSBIRDUgbW9kZWwgZmlsZQ==
+
+    JobResultsResponse:
+      properties:
+        http_code:
+          type: integer 
+          example: 200
+        results:
+          type: object 
+          properties:
+            outputs:
+              type: array 
+              items:
+                type: array 
+                items:
+                  type: number
+              example: [[0.05, 0.05, 0.9], [0.98, 0.01, 0.01], [0.3, 0.5, 0.2]]
+
+
+
+
