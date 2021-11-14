@@ -187,6 +187,48 @@
         }
       }
     },
+    "/models/{model_id}": {
+      "delete": {
+        "summary": "Delete model with given model ID",
+        "tags": [
+          "Model Endpoints"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model_id",
+            "required": true,
+            "description": "UUID of model",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "JSON response containing model in JSON format",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelDeletedResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JSON response containing error message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/tensor/run": {
       "post": {
         "summary": "Run model against a single input vector",
@@ -310,6 +352,56 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AsyncModelRunResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON response containing error message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadRequest"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "JSON response containing error message",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotFound"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tensor/train": {
+      "patch": {
+        "summary": "Live train a model with provided input data",
+        "tags": [
+          "Event Endpoints"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrainModelRequestBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSON response results of model run",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainModelResponse"
                 }
               }
             }
@@ -639,6 +731,18 @@
           }
         }
       },
+      "ModelDeletedResponse": {
+        "properties": {
+          "http_code": {
+            "type": "integer",
+            "example": 201
+          },
+          "message": {
+            "type": "string",
+            "example": "Successfully deleted model"
+          }
+        }
+      },
       "ModelsResponse": {
         "properties": {
           "http_code": {
@@ -692,6 +796,64 @@
               "sepal_length": 1.26,
               "sepal_width": 4.84
             }
+          }
+        }
+      },
+      "TrainModelRequestBody": {
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "d7495cd8-37b9-4c8d-abb0-833cc05bca1a"
+          },
+          "epochs": {
+            "type": "integer",
+            "example": 100
+          },
+          "input_vectors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "example": {
+                "petal_length": 0.56,
+                "petal_width": 3.21,
+                "sepal_length": 1.26,
+                "sepal_width": 4.84
+              }
+            }
+          },
+          "output_vectors": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "example": [
+                [
+                  0,
+                  1,
+                  0
+                ]
+              ]
+            }
+          }
+        }
+      },
+      "TrainModelResponse": {
+        "properties": {
+          "http_code": {
+            "type": "integer",
+            "example": 200
+          },
+          "message": {
+            "type": "string",
+            "example": "Successfully queued job"
+          },
+          "job_id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "9692a3f7-3c86-4b01-b33d-f09359191de6"
           }
         }
       },

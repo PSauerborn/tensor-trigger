@@ -49,13 +49,13 @@ paths:
       tags:
       - Model Endpoints
       parameters:
-      - in: path 
-        name: model_id 
-        required: true 
-        description: UUID of model 
+      - in: path
+        name: model_id
+        required: true
+        description: UUID of model
         schema:
-          type: string 
-          format: uuid        
+          type: string
+          format: uuid
       responses:
         200:
           description: JSON response containing model in JSON format
@@ -76,13 +76,13 @@ paths:
       tags:
       - Model Endpoints
       parameters:
-      - in: path 
-        name: model_id 
-        required: true 
-        description: UUID of model 
+      - in: path
+        name: model_id
+        required: true
+        description: UUID of model
         schema:
-          type: string 
-          format: uuid        
+          type: string
+          format: uuid
       responses:
         200:
           description: JSON response containing base64 encoded HD5 model
@@ -122,7 +122,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BadRequest'
-          
+
+  /models/{model_id}:
+    delete:
+      summary: Delete model with given model ID
+      tags:
+      - Model Endpoints
+      parameters:
+      - in: path
+        name: model_id
+        required: true
+        description: UUID of model
+        schema:
+          type: string
+          format: uuid
+      responses:
+        200:
+          description: JSON response containing model in JSON format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelDeletedResponse'
+        404:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
 
   /tensor/run:
     post:
@@ -220,6 +246,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/NotFound'
 
+  /tensor/train:
+    patch:
+      summary: Live train a model with provided input data
+      tags:
+      - Event Endpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrainModelRequestBody'
+
+      responses:
+        200:
+          description: JSON response results of model run
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrainModelResponse'
+        400:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+        404:
+          description: JSON response containing error message
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFound'
+
   /jobs:
     get:
       summary: Retrieve all jobs
@@ -239,13 +297,13 @@ paths:
       tags:
       - Job Endpoints
       parameters:
-      - in: path 
-        name: job_id 
-        required: true 
-        description: UUID of job 
+      - in: path
+        name: job_id
+        required: true
+        description: UUID of job
         schema:
-          type: string 
-          format: uuid   
+          type: string
+          format: uuid
       responses:
         200:
           description: JSON response containing job metadata in JSON format
@@ -266,13 +324,13 @@ paths:
       tags:
       - Job Endpoints
       parameters:
-      - in: path 
-        name: job_id 
-        required: true 
-        description: UUID of job 
+      - in: path
+        name: job_id
+        required: true
+        description: UUID of job
         schema:
-          type: string 
-          format: uuid 
+          type: string
+          format: uuid
       responses:
         200:
           description: JSON response containing base64 encoded CSV input data
@@ -293,13 +351,13 @@ paths:
       tags:
       - Job Endpoints
       parameters:
-      - in: path 
-        name: job_id 
-        required: true 
-        description: UUID of job 
+      - in: path
+        name: job_id
+        required: true
+        description: UUID of job
         schema:
-          type: string 
-          format: uuid 
+          type: string
+          format: uuid
       responses:
         200:
           description: JSON response containing model ouputs in JSON format
@@ -365,8 +423,8 @@ components:
     Model:
       properties:
         model_id:
-          type: string 
-          format: uuid 
+          type: string
+          format: uuid
           example: d7495cd8-37b9-4c8d-abb0-833cc05bca1a
         model_name:
           type: string
@@ -376,24 +434,40 @@ components:
           example: example model used to classify iris flowers
         model_schema:
           type: object
-          example:
-            petal_length:
-              var_type: INT
-              index: 0
-            petal_width:
-              var_type: FLOAT
-              index: 0
-            sepal_length:
-              var_type: INT
-              index: 0
-            sepal_width:
-              var_type: FLOAT
-              index: 0
+          properties:
+            input_schema:
+              type: object
+              example:
+                petal_length:
+                  var_type: INT
+                  index: 0
+                petal_width:
+                  var_type: FLOAT
+                  index: 1
+                sepal_length:
+                  var_type: INT
+                  index: 2
+                sepal_width:
+                  var_type: FLOAT
+                  index: 3
+
+            output_schema:
+              type: object
+              example:
+                iris_setosa:
+                  var_type: INT
+                  index: 0
+                iris_versicolour:
+                  var_type: FLOAT
+                  index: 1
+                iris_virginica:
+                  var_type: INT
+                  index: 2
         created:
-          type: string 
+          type: string
           format: timestamp
           example: '2021-01-01T00:00:00Z'
-    
+
     NewModelRequestBody:
       properties:
         model_name:
@@ -403,49 +477,74 @@ components:
           type: string
           example: example model used to classify iris flowers
         model_content:
-          type: string 
+          type: string
           description: base64 encoded HD5 tensorflow file
           example: data:application/octet-stream;base64,RXhhbXBsZSBIRDUgbW9kZWwgZmlsZQ==
         model_schema:
           type: object
-          example:
-            petal_length:
-              var_type: INT
-              index: 0
-            petal_width:
-              var_type: FLOAT
-              index: 0
-            sepal_length:
-              var_type: INT
-              index: 0
-            sepal_width:
-              var_type: FLOAT
-              index: 0
+          properties:
+            input_schema:
+              type: object
+              example:
+                petal_length:
+                  var_type: INT
+                  index: 0
+                petal_width:
+                  var_type: FLOAT
+                  index: 1
+                sepal_length:
+                  var_type: INT
+                  index: 2
+                sepal_width:
+                  var_type: FLOAT
+                  index: 3
+
+            output_schema:
+              type: object
+              example:
+                iris_setosa:
+                  var_type: INT
+                  index: 0
+                iris_versicolour:
+                  var_type: FLOAT
+                  index: 1
+                iris_virginica:
+                  var_type: INT
+                  index: 2
 
     ModelCreatedResponse:
       properties:
         http_code:
-          type: integer 
-          example: 201 
+          type: integer
+          example: 201
         message:
-          type: string 
-          example: Successfully created model 
+          type: string
+          example: Successfully created model
+
+    ModelDeletedResponse:
+      properties:
+        http_code:
+          type: integer
+          example: 201
+        message:
+          type: string
+          example: Successfully deleted model
 
     ModelsResponse:
       properties:
         http_code:
-          type: integer 
-          example: 200 
+          type: integer
+          example: 200
         models:
           type: array
-          items: 
+          items:
             $ref: '#/components/schemas/Model'
-        
+
     ModelMetaResponse:
       properties:
         http_code:
-          type: integer 
-          example: 200 
+          type: integer
+          example: 200
         model:
           type: object
           $ref: '#/components/schemas/Model'
@@ -453,36 +552,76 @@ components:
     ModelContentResponse:
       properties:
         http_code:
-          type: integer 
-          example: 200 
+          type: integer
+          example: 200
         model:
-          type: string 
+          type: string
           example: data:application/octet-stream;base64,RXhhbXBsZSBIRDUgbW9kZWwgZmlsZQ==
 
     RunModelRequestBody:
       properties:
         model_id:
-          type: string 
-          format: uuid 
+          type: string
+          format: uuid
           example: d7495cd8-37b9-4c8d-abb0-833cc05bca1a
         input_vector:
-          type: object 
+          type: object
           example:
             petal_length: 0.56
             petal_width: 3.21
             sepal_length: 1.26
             sepal_width: 4.84
 
+    TrainModelRequestBody:
+      properties:
+        model_id:
+          type: string
+          format: uuid
+          example: d7495cd8-37b9-4c8d-abb0-833cc05bca1a
+        epochs:
+          type: integer
+          example: 100
+        input_vectors:
+          type: array
+          items:
+            type: object
+            example:
+              petal_length: 0.56
+              petal_width: 3.21
+              sepal_length: 1.26
+              sepal_width: 4.84
+        output_vectors:
+          type: array
+          items:
+            type: object
+            example:
+              iris_setosa: 1
+              iris_versicolour: 0
+              iris_virginica: 0
+
+    TrainModelResponse:
+      properties:
+        http_code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: Successfully queued job
+        job_id:
+          type: string
+          format: uuid
+          example: 9692a3f7-3c86-4b01-b33d-f09359191de6
+
     RunModelBatchedRequestBody:
       properties:
         model_id:
-          type: string 
-          format: uuid 
+          type: string
+          format: uuid
           example: d7495cd8-37b9-4c8d-abb0-833cc05bca1a
         input_vectors:
-          type: array 
+          type: array
           items:
-            type: object 
+            type: object
             example:
               petal_length: 0.56
               petal_width: 3.21
@@ -492,116 +631,116 @@ components:
     RunModelAsyncRequestBody:
       properties:
         model_id:
-          type: string 
-          format: uuid 
+          type: string
+          format: uuid
           example: d7495cd8-37b9-4c8d-abb0-833cc05bca1a
         input_data:
-          type: string 
-          description: base64 encoded CSV file 
+          type: string
+          description: base64 encoded CSV file
           example: data:text/plain;base64,RXhhbXBsZSBIRDUgbW9kZWwgZmlsZQ==
 
     ModelRunResponse:
       properties:
         http_code:
-          type: integer 
+          type: integer
           example: 200
         output:
-          type: array 
-          items:
-            type: number 
-          example: [0.98, 0.01, 0.01]
+          type: object
+          example:
+            iris_setosa: 1
+            iris_versicolour: 0
+            iris_virginica: 0
 
     BatchedModelRunResponse:
       properties:
         http_code:
-          type: integer 
+          type: integer
           example: 200
         output:
-          type: array 
+          type: array
           items:
-            type: array 
-            items:
-              type: number
-          example: [[0.05, 0.05, 0.9], [0.98, 0.01, 0.01], [0.3, 0.5, 0.2]]
+            type: object
+            example:
+              iris_setosa: 1
+              iris_versicolour: 0
+              iris_virginica: 0
 
     AsyncModelRunResponse:
       properties:
         http_code:
-          type: integer 
+          type: integer
           example: 201
         message:
-          type: string 
+          type: string
           example: 'Successfully queued job'
         job_id:
-          type: string 
-          format: uuid 
+          type: string
+          format: uuid
           example: 9692a3f7-3c86-4b01-b33d-f09359191de6
 
     Job:
       properties:
-        job_id: 
-          type: string 
-          format: uuid 
+        job_id:
+          type: string
+          format: uuid
           example: b6c60f67-aed9-4c29-909e-3d4a3fb08560
         created:
-          type: string 
+          type: string
           format: timestamp
           example: '2021-01-01T00:00:00Z'
         upload_size:
-          type: integer 
-          description: number of bytes uploaded for input data 
+          type: integer
+          description: number of bytes uploaded for input data
           example: 556788
         last_updated:
-          type: string 
+          type: string
           format: timestamp
           example: '2021-01-01T00:00:00Z'
 
     JobMetaResponse:
       properties:
         http_code:
-          type: integer 
-          example: 200 
+          type: integer
+          example: 200
         job:
-          type: object 
+          type: object
           $ref: '#/components/schemas/Job'
 
     JobsResponse:
       properties:
         http_code:
-          type: integer 
+          type: integer
           example: 200
         jobs:
-          type: array 
+          type: array
           items:
-            type: object 
+            type: object
             $ref: '#/components/schemas/Job'
 
     JobContentResponse:
       properties:
         http_code:
-          type: integer 
+          type: integer
           example: 200
         job:
-          type: string 
-          description: base64 encoded CSV data 
+          type: string
+          description: base64 encoded CSV data
           example: data:text/plain;base64,RXhhbXBsZSBIRDUgbW9kZWwgZmlsZQ==
 
     JobResultsResponse:
       properties:
         http_code:
-          type: integer 
+          type: integer
           example: 200
         results:
-          type: object 
+          type: object
           properties:
             outputs:
-              type: array 
+              type: array
               items:
-                type: array 
-                items:
-                  type: number
-              example: [[0.05, 0.05, 0.9], [0.98, 0.01, 0.01], [0.3, 0.5, 0.2]]
-
-
-
+                type: object
+                example:
+                  iris_setosa: 1
+                  iris_versicolour: 0
+                  iris_virginica: 0
 

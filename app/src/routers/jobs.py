@@ -11,10 +11,11 @@ from fastapi.responses import JSONResponse
 
 from src.utils import json_response_with_message, get_user, \
     generate_base64_file, Base64FileMetadata
-from src.persistence.postgres import get_user_jobs, get_user_job
+from src.persistence.postgres import get_user_jobs, get_user_job, \
+    get_user_model
 from src.persistence.s3 import retrieve_s3_file
 from src.config import PG_CREDENTIALS
-
+from src.logic.tensor import _format_output_vector
 
 LOGGER = logging.getLogger(__name__)
 ROUTER = APIRouter()
@@ -100,11 +101,14 @@ async def get_job_results_handler(job_id: UUID, uid: str = Depends(get_user())) 
         LOGGER.error('unable to retrieve job results for %s: invalid job state %s', job_id, job.job_state)
         return json_response_with_message(status.HTTP_400_BAD_REQUEST, 'Invalid job state')
 
+    meta = get_user_model(PG_CREDENTIALS, uid, job.model_id)
+    schema = meta.model_schema
+
     s3_data = retrieve_s3_file('/tensor-trigger/output-data' + str(job.job_id))
     results = json.loads(s3_data.getvalue().decode())
     # generate metadata for file (including mime type) and convert to
     # base64 encoded format
     meta = Base64FileMetadata(file_size=0, mime_type='text/plain')
     content = {'http_code': status.HTTP_200_OK,
-               'results': results}
+               'results': _format_output_vector(results.get('output', []), schema.get('output_schema'))}
     return JSONResponse(status_code=status.HTTP_200_OK, content=je(content))

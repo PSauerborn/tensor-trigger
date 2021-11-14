@@ -2,7 +2,8 @@
 
 import logging
 import io
-from typing import Dict, Any, Union
+from typing import Dict, Any, Union, List
+from collections import namedtuple
 
 import h5py
 import numpy as np
@@ -84,6 +85,26 @@ def _get_expected_input_shape(model) -> int:
     except (KeyError, IndexError):
         pass
 
+def _get_expected_output_shape(model) -> int:
+    """Function used to extract the expected
+    input shape from a tensorflow model
+
+    Args:
+        model ([type]): [description]
+
+    Returns:
+        int: [description]
+    """
+
+    try:
+        layers = model.get_config()['layers']
+        input_layer_config = layers[len(layers) - 1]['config']
+        return input_layer_config.get('units')
+    except (KeyError, IndexError):
+        pass
+
+
+ModelInputOutput = namedtuple('ModelInputOutput', ['input_shape', 'output_shape'])
 
 def validate_upload_content(content: io.BytesIO, schema: Dict[str, str]):
     """Function used to validate uploaded
@@ -100,11 +121,20 @@ def validate_upload_content(content: io.BytesIO, schema: Dict[str, str]):
         # raise exception is schema does not fit expected
         # length
         expected_input_shape = _get_expected_input_shape(model)
-        if expected_input_shape != len(schema.keys()):
+        if expected_input_shape != len(schema.input_schema.keys()):
             LOGGER.error('unable to validate inputs: expected length does not match schema: expected %s got %s',
-                         expected_input_shape, len(schema.keys()))
+                         expected_input_shape, len(schema.input_schema.keys()))
             raise ValueError
 
+        # evaluate expected output shape
+        expected_output_shape = _get_expected_output_shape(model)
+        if expected_output_shape != len(schema.output_schema.keys()):
+            LOGGER.error('unable to validate output: expected length does not match schema: expected %s got %s',
+                         expected_output_shape, len(schema.output_schema.keys()))
+            raise ValueError
+
+        return ModelInputOutput(input_shape=expected_input_shape,
+                                output_shape=expected_output_shape)
     except Exception:
         LOGGER.exception('unable to validate input model')
         raise
@@ -138,9 +168,31 @@ def _format_input_vector(input_vector: Dict[str, str], schema: Dict[str, dict]) 
     return array.reshape(-1, len(schema.keys()))
 
 
+def _format_output_vector(results: np.ndarray, output_schema: Dict[str, str]) -> List[dict]:
+    """Function used to format output vectors
+    into required format
+
+    Args:
+        results (np.ndarray): [description]
+        output_schema (Dict[str, str]): [description]
+
+    Returns:
+        List[dict]: [description]
+    """
+
+    formatted_results = []
+    for result_set in results:
+        subset = {}
+        for k, v in zip(output_schema.keys(), result_set):
+            subset[k] = v
+        formatted_results.append(subset)
+    return formatted_results
+
+
 def run_model(model_file: io.BytesIO,
               input_vector: Dict[str, float],
-              schema: Dict[str, dict]) -> Union[float, None]:
+              input_schema: Dict[str, dict],
+              output_schema: Dict[str, str]) -> Union[float, None]:
     """Function used to run model via model
     file
 
@@ -157,9 +209,12 @@ def run_model(model_file: io.BytesIO,
         # get run results from model. note that
         # the input vector is cast to the format
         # required by the model schema
-        input_vector = _format_input_vector(input_vector, schema)
+        input_vector = _format_input_vector(input_vector, input_schema)
         results = network.predict(input_vector)
-        return results.tolist() if results.shape[0] > 0 else None
+
+        formatted_results = _format_output_vector(results.tolist(), output_schema)
+        print(formatted_results)
+        return formatted_results[0] if results.shape[0] > 0 else None
     except Exception:
         LOGGER.exception('unable to run model with input vector %s', input_vector)
 
@@ -197,7 +252,8 @@ def _format_input_vector_batch(input_vectors: Dict[str, str], schema: Dict[str, 
 
 def run_model_batched(model_file: io.BytesIO,
                       input_vectors: Dict[str, float],
-                      schema: Dict[str, dict]) -> Union[float, None]:
+                      input_schema: Dict[str, dict],
+                      output_schema: Dict[str, dict]) -> Union[float, None]:
     """Function used to run model via model
     file
 
@@ -214,9 +270,11 @@ def run_model_batched(model_file: io.BytesIO,
         # get run results from model. note that
         # the input vector is cast to the format
         # required by the model schema
-        input_vectors = _format_input_vector_batch(input_vectors, schema)
+        input_vectors = _format_input_vector_batch(input_vectors, input_schema)
         results = network.predict(input_vectors)
-        return results.tolist() if results.shape[0] > 0 else None
+
+        formatted_results = _format_output_vector(results.tolist(), output_schema)
+        return formatted_results if results.shape[0] > 0 else None
     except Exception:
         LOGGER.exception('unable to run model with input vectors')
 

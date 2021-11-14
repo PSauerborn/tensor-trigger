@@ -5,6 +5,8 @@ CREATE TABLE models(
     model_description TEXT NOT NULL,
     model_schema JSON NOT NULL,
     size INT NOT NULL,
+    input_shape INT,
+    output_shape INT,
     created TIMESTAMP NOT NULL DEFAULT (now() AT TIME ZONE 'UTC')
 );
 

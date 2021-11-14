@@ -3,12 +3,13 @@
 import logging
 import io
 from uuid import UUID
-from typing import Union
+from typing import Union, List, Dict
 
 import h5py
 import numpy as np
 import pandas as pd
 from tensorflow.keras.models import load_model
+from tensorflow.python.keras.saving import hdf5_format
 
 from src.services import tensor
 from src.logic.utils import parse_base64_file, timer
@@ -104,3 +105,44 @@ def run_tensorflow_model(model_id: UUID, job_id: UUID, user: str):
     except Exception:
         LOGGER.exception('unable to run tensorflow model')
 
+
+@timer
+def train_tensorflow_model(model_id: UUID,
+                           user: str,
+                           epochs: int,
+                           input_vectors: List[Dict[str, float]],
+                           output_vectors: List[Dict[str, float]]):
+    """Function used to run tensorflow models
+
+    Args:
+        model_id (UUID): [description]
+        job_id (UUID): [description]
+        user (str): [description]
+    """
+
+    # get tensorflow model from tensor trigger API
+    model = get_tensorflow_model(model_id, user)
+    if model is None:
+        LOGGER.error('unable to retrieve tensorflow model')
+        return
+
+    # generate input data for model and convert
+    # to numpy array (convert from 1d to 2d)
+    input_data = np.array([list(v.values()) for v in input_vectors])
+    input_data = input_data.reshape(-1, len(input_data[0]))
+
+    # generate output data for model and convert
+    # to numpy array (convert from 1d to 2d)
+    output_data = np.array([list(v.values()) for v in output_vectors])
+    output_data = output_data.reshape(-1, len(output_data[0]))
+    try:
+        # run model with provided input data
+        model.fit(input_data, output_data, epochs=epochs)
+        # generate new instance of BytesIO
+        # and save model to byes data
+        buffer = io.BytesIO()
+        with h5py.File(buffer, 'w') as f:
+            model.save(f)
+        return buffer
+    except Exception:
+        LOGGER.exception('unable to update tensorflow model')
