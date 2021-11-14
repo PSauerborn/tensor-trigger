@@ -45,3 +45,14 @@ def upload_s3_file(content: io.BytesIO, path: str):
     """
 
     CLIENT.upload_fileobj(content, S3_BUCKET_NAME, path)
+
+
+def delete_s3_file(path: str):
+    """Function used to delete file
+    from S3 bucket
+
+    Args:
+        path (str): Path of S3 file
+    """
+
+    CLIENT.delete_object(Bucket=S3_BUCKET_NAME, Key=path)

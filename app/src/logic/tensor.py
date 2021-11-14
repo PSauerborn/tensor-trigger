@@ -3,6 +3,7 @@
 import logging
 import io
 from typing import Dict, Any, Union
+from collections import namedtuple
 
 import h5py
 import numpy as np
@@ -84,6 +85,26 @@ def _get_expected_input_shape(model) -> int:
     except (KeyError, IndexError):
         pass
 
+def _get_expected_output_shape(model) -> int:
+    """Function used to extract the expected
+    input shape from a tensorflow model
+
+    Args:
+        model ([type]): [description]
+
+    Returns:
+        int: [description]
+    """
+
+    try:
+        layers = model.get_config()['layers']
+        input_layer_config = layers[len(layers) - 1]['config']
+        return input_layer_config.get('units')
+    except (KeyError, IndexError):
+        pass
+
+
+ModelInputOutput = namedtuple('ModelInputOutput', ['input_shape', 'output_shape'])
 
 def validate_upload_content(content: io.BytesIO, schema: Dict[str, str]):
     """Function used to validate uploaded
@@ -105,6 +126,10 @@ def validate_upload_content(content: io.BytesIO, schema: Dict[str, str]):
                          expected_input_shape, len(schema.keys()))
             raise ValueError
 
+        # evaluate expected output shape
+        expected_output_shape = _get_expected_output_shape(model)
+        return ModelInputOutput(input_shape=expected_input_shape,
+                                output_shape=expected_output_shape)
     except Exception:
         LOGGER.exception('unable to validate input model')
         raise

@@ -81,7 +81,7 @@ def get_user_models(creds: PostgresCredentials, uid: str) -> List[NamedTuple]:
     """
 
     with get_cursor(creds) as db:
-        db.execute('SELECT model_id,model_name,model_description,model_schema,size,created FROM models '
+        db.execute('SELECT model_id,model_name,model_description,model_schema,size,created,input_shape,output_shape FROM models '
                    'WHERE username=%s', (uid,))
         results = db.fetchall()
     return list(results) if results else []
@@ -101,7 +101,7 @@ def get_user_model(creds: PostgresCredentials, uid: str, model_id: UUID) -> Unio
     """
 
     with get_cursor(creds) as db:
-        db.execute('SELECT model_id,model_name,model_description,model_schema,size,created FROM models '
+        db.execute('SELECT model_id,model_name,model_description,model_schema,size,created,input_shape,output_shape FROM models '
                    'WHERE username=%s AND model_id=%s', (uid, model_id))
         result = db.fetchone()
     return result if result else None
@@ -111,7 +111,9 @@ def insert_user_model(creds: PostgresCredentials,
                       name: str,
                       description: str,
                       schema: dict,
-                      size: int) -> UUID:
+                      size: int,
+                      input_shape: int,
+                      output_shape: int) -> UUID:
     """DB function used to insert new model into
     database
 
@@ -133,8 +135,8 @@ def insert_user_model(creds: PostgresCredentials,
     # cast all data types to upper case
     schema = {k: format_schema_item(v) for k, v in schema.items()}
     with get_cursor(creds) as db:
-        db.execute('INSERT INTO models(model_id,username,model_name,model_description,model_schema,size) '
-                   'VALUES(%s,%s,%s,%s,%s,%s)', (model_id, uid, name, description, json.dumps(schema), size))
+        db.execute('INSERT INTO models(model_id,username,model_name,model_description,model_schema,size,input_shape,output_shape) '
+                   'VALUES(%s,%s,%s,%s,%s,%s,%s,%s)', (model_id, uid, name, description, json.dumps(schema), size, input_shape, output_shape))
     return model_id
 
 
@@ -194,3 +196,20 @@ def get_user_job(creds: PostgresCredentials, uid: str, job_id: UUID) -> List[Nam
                    'WHERE models.username = %s AND j.job_id = %s', (uid, job_id))
         result = db.fetchone()
     return result if result else None
+
+
+def delete_user_model(creds: PostgresCredentials, uid: str, model_id: UUID):
+    """DB function used to delete user model
+    from database
+
+    Args:
+        creds (PostgresCredentials): [description]
+        uid (str): [description]
+        model_id (UUID): [description]
+
+    Returns:
+        [type]: [description]
+    """
+
+    with get_cursor(creds) as db:
+        db.execute('DELETE FROM models WHERE model_id = %s AND username = %s', (model_id, uid))
