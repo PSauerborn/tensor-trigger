@@ -19,7 +19,7 @@ class ModelTrainEvent(BaseModel):
     user: str
     epochs: int = 100
     input_vectors: List[Dict[str, float]]
-    output_vectors: List[List[float]]
+    output_vectors: List[Dict[str, float]]
 
 
 ALLOWED_EVENT_TYPES = {

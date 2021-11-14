@@ -38,6 +38,7 @@ async def get_models_handler(uid: str = Depends(get_user())) -> JSONResponse:
                'models': models}
     return JSONResponse(status_code=status.HTTP_200_OK, content=je(content))
 
+
 @ROUTER.get('/{model_id}/content')
 async def get_model_handler(model_id: UUID, uid: str = Depends(get_user())) -> JSONResponse:
     """API handler used to retrieve model by
@@ -60,6 +61,7 @@ async def get_model_handler(model_id: UUID, uid: str = Depends(get_user())) -> J
                'model': generate_base64_file(s3_data, meta)}
     return JSONResponse(status_code=status.HTTP_200_OK, content=je(content))
 
+
 @ROUTER.get('/{model_id}/metadata')
 async def get_model_meta_handler(model_id: UUID, uid: str = Depends(get_user())) -> JSONResponse:
     """API handler used to retrieve model by
@@ -78,6 +80,7 @@ async def get_model_meta_handler(model_id: UUID, uid: str = Depends(get_user()))
                'model': model_meta._asdict()}
     return JSONResponse(status_code=status.HTTP_200_OK, content=je(content))
 
+
 @ROUTER.post('/new')
 async def new_model_handler(r: ModelUploadRequest, uid: str = Depends(get_user())) -> JSONResponse:
     """API handler used to retrieve model by
@@ -89,7 +92,6 @@ async def new_model_handler(r: ModelUploadRequest, uid: str = Depends(get_user()
 
     LOGGER.debug('received request to upload new model for user %s', uid)
     # insert into postgres database and retrieve model ID
-
     try:
         meta, bytes_data = parse_base64_file(r.model_content)
         # try to parse uploaded content to tensorflow model

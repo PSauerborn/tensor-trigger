@@ -132,8 +132,11 @@ def insert_user_model(creds: PostgresCredentials,
         return row.dict()
 
     model_id = uuid4()
-    # cast all data types to upper case
-    schema = {k: format_schema_item(v) for k, v in schema.items()}
+    # cast all data types to upper case before
+    # storing in postgres database
+    schema = {'input_schema': {k: format_schema_item(v) for k, v in schema.input_schema.items()},
+              'output_schema': {k: format_schema_item(v) for k, v in schema.output_schema.items()}}
+
     with get_cursor(creds) as db:
         db.execute('INSERT INTO models(model_id,username,model_name,model_description,model_schema,size,input_shape,output_shape) '
                    'VALUES(%s,%s,%s,%s,%s,%s,%s,%s)', (model_id, uid, name, description, json.dumps(schema), size, input_shape, output_shape))

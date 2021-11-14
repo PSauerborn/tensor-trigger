@@ -111,7 +111,7 @@ def train_tensorflow_model(model_id: UUID,
                            user: str,
                            epochs: int,
                            input_vectors: List[Dict[str, float]],
-                           output_vectors: List[List[float]]):
+                           output_vectors: List[Dict[str, float]]):
     """Function used to run tensorflow models
 
     Args:
@@ -133,7 +133,7 @@ def train_tensorflow_model(model_id: UUID,
 
     # generate output data for model and convert
     # to numpy array (convert from 1d to 2d)
-    output_data = np.array(output_vectors)
+    output_data = np.array([list(v.values()) for v in output_vectors])
     output_data = output_data.reshape(-1, len(output_data[0]))
     try:
         # run model with provided input data

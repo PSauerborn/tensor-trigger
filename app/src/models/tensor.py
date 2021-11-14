@@ -29,4 +29,4 @@ class TrainModelRequest(BaseModel):
     model_id: UUID
     epochs: int = 100
     input_vectors: List[Dict[str, float]]
-    output_vectors: List[List[float]]
+    output_vectors: List[Dict[str, float]]
