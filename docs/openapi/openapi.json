@@ -655,22 +655,44 @@
           },
           "model_schema": {
             "type": "object",
-            "example": {
-              "petal_length": {
-                "var_type": "INT",
-                "index": 0
+            "properties": {
+              "input_schema": {
+                "type": "object",
+                "example": {
+                  "petal_length": {
+                    "var_type": "INT",
+                    "index": 0
+                  },
+                  "petal_width": {
+                    "var_type": "FLOAT",
+                    "index": 1
+                  },
+                  "sepal_length": {
+                    "var_type": "INT",
+                    "index": 2
+                  },
+                  "sepal_width": {
+                    "var_type": "FLOAT",
+                    "index": 3
+                  }
+                }
               },
-              "petal_width": {
-                "var_type": "FLOAT",
-                "index": 0
-              },
-              "sepal_length": {
-                "var_type": "INT",
-                "index": 0
-              },
-              "sepal_width": {
-                "var_type": "FLOAT",
-                "index": 0
+              "output_schema": {
+                "type": "object",
+                "example": {
+                  "iris_setosa": {
+                    "var_type": "INT",
+                    "index": 0
+                  },
+                  "iris_versicolour": {
+                    "var_type": "FLOAT",
+                    "index": 1
+                  },
+                  "iris_virginica": {
+                    "var_type": "INT",
+                    "index": 2
+                  }
+                }
               }
             }
           },
@@ -698,22 +720,44 @@
           },
           "model_schema": {
             "type": "object",
-            "example": {
-              "petal_length": {
-                "var_type": "INT",
-                "index": 0
+            "properties": {
+              "input_schema": {
+                "type": "object",
+                "example": {
+                  "petal_length": {
+                    "var_type": "INT",
+                    "index": 0
+                  },
+                  "petal_width": {
+                    "var_type": "FLOAT",
+                    "index": 1
+                  },
+                  "sepal_length": {
+                    "var_type": "INT",
+                    "index": 2
+                  },
+                  "sepal_width": {
+                    "var_type": "FLOAT",
+                    "index": 3
+                  }
+                }
               },
-              "petal_width": {
-                "var_type": "FLOAT",
-                "index": 0
-              },
-              "sepal_length": {
-                "var_type": "INT",
-                "index": 0
-              },
-              "sepal_width": {
-                "var_type": "FLOAT",
-                "index": 0
+              "output_schema": {
+                "type": "object",
+                "example": {
+                  "iris_setosa": {
+                    "var_type": "INT",
+                    "index": 0
+                  },
+                  "iris_versicolour": {
+                    "var_type": "FLOAT",
+                    "index": 1
+                  },
+                  "iris_virginica": {
+                    "var_type": "INT",
+                    "index": 2
+                  }
+                }
               }
             }
           }
@@ -825,17 +869,12 @@
           "output_vectors": {
             "type": "array",
             "items": {
-              "type": "array",
-              "items": {
-                "type": "number"
-              },
-              "example": [
-                [
-                  0,
-                  1,
-                  0
-                ]
-              ]
+              "type": "object",
+              "example": {
+                "iris_setosa": 1,
+                "iris_versicolour": 0,
+                "iris_virginica": 0
+              }
             }
           }
         }
@@ -899,15 +938,12 @@
             "example": 200
           },
           "output": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            },
-            "example": [
-              0.98,
-              0.01,
-              0.01
-            ]
+            "type": "object",
+            "example": {
+              "iris_setosa": 1,
+              "iris_versicolour": 0,
+              "iris_virginica": 0
+            }
           }
         }
       },
@@ -920,28 +956,13 @@
           "output": {
             "type": "array",
             "items": {
-              "type": "array",
-              "items": {
-                "type": "number"
+              "type": "object",
+              "example": {
+                "iris_setosa": 1,
+                "iris_versicolour": 0,
+                "iris_virginica": 0
               }
-            },
-            "example": [
-              [
-                0.05,
-                0.05,
-                0.9
-              ],
-              [
-                0.98,
-                0.01,
-                0.01
-              ],
-              [
-                0.3,
-                0.5,
-                0.2
-              ]
-            ]
+            }
           }
         }
       },
@@ -1038,28 +1059,13 @@
               "outputs": {
                 "type": "array",
                 "items": {
-                  "type": "array",
-                  "items": {
-                    "type": "number"
+                  "type": "object",
+                  "example": {
+                    "iris_setosa": 1,
+                    "iris_versicolour": 0,
+                    "iris_virginica": 0
                   }
-                },
-                "example": [
-                  [
-                    0.05,
-                    0.05,
-                    0.9
-                  ],
-                  [
-                    0.98,
-                    0.01,
-                    0.01
-                  ],
-                  [
-                    0.3,
-                    0.5,
-                    0.2
-                  ]
-                ]
+                }
               }
             }
           }
